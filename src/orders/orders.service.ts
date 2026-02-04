@@ -42,7 +42,7 @@ export class OrdersService {
         product_id: productId,
         customer_email: customerEmail,
         price_usdc: priceUsdc,
-        source_wallet_address: sourceWalletAddress,
+        source_wallet_address: sourceWalletAddress.toLowerCase(),
       })
       .select()
       .single();
@@ -100,7 +100,7 @@ export class OrdersService {
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Failed to find pending order: ${error.message}`);
+      return null;
     }
 
     return (data ?? null) as Order | null;
@@ -111,7 +111,7 @@ export class OrdersService {
     transactionHash: string,
     detectedAt: string,
   ): Promise<void> {
-    const { error } = await this.supabase
+    await this.supabase
       .getClient()
       .from('orders')
       .update({
@@ -120,9 +120,5 @@ export class OrdersService {
         payment_transaction_date: detectedAt,
       })
       .eq('id', orderId);
-
-    if (error) {
-      throw new Error(`Failed to mark order as paid: ${error.message}`);
-    }
   }
 }

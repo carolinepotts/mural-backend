@@ -39,4 +39,6 @@ export interface AccountCreditedPayload {
   };
 }
 
-export type MuralPayWebhookPayload = AccountCreditedPayload | { type: string };
+export type MuralPayWebhookPayload = {
+  payload: AccountCreditedPayload | { type: string };
+};

@@ -9,6 +9,8 @@ type MuralPayEventHandler = (
   payload: MuralPayWebhookPayload,
 ) => Promise<void> | void;
 
+const MERCHANT_WALLET_ADDRESS = '0xfb7814e50Af76Cea24e2174973000A45e134A2Bf';
+
 @Controller('webhooks')
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
@@ -16,20 +18,22 @@ export class WebhooksController {
   private readonly muralPayEventHandlers: Record<string, MuralPayEventHandler> =
     {
       account_credited: (payload) =>
-        this.handleAccountCredited(payload as AccountCreditedPayload),
+        this.handleAccountCredited(payload.payload as AccountCreditedPayload),
     };
 
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post('muralpay')
   async muralpay(@Body() body: MuralPayWebhookPayload) {
-    const handler = body?.type
-      ? this.muralPayEventHandlers[body.type]
+    const payload = body?.payload;
+
+    const handler = payload?.type
+      ? this.muralPayEventHandlers[payload.type]
       : undefined;
 
     if (!handler) {
       this.logger.log(
-        `MuralPay webhook: not an event we care about (type=${body?.type ?? 'undefined'})`,
+        `MuralPay webhook: not an event we care about (type=${payload?.type ?? 'undefined'})`,
       );
       return { received: true };
     }
@@ -41,10 +45,17 @@ export class WebhooksController {
   private async handleAccountCredited(
     payload: AccountCreditedPayload,
   ): Promise<void> {
-    const { tokenAmount, transactionDetails } = payload;
+    const { tokenAmount, transactionDetails, accountWalletAddress } = payload;
+
+    if (accountWalletAddress !== MERCHANT_WALLET_ADDRESS) {
+      this.logger.log(
+        `MuralPay webhook: not an event for our merchant account (accountWalletAddress=${accountWalletAddress})`,
+      );
+      return;
+    }
 
     if (
-      tokenAmount.blockchain !== 'polygon' ||
+      tokenAmount.blockchain !== 'POLYGON' ||
       tokenAmount.tokenSymbol !== 'USDC'
     ) {
       this.logger.log(
