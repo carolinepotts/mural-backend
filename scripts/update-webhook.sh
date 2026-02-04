@@ -25,7 +25,7 @@ curl --request PATCH \
   --header "authorization: Bearer $MURAL_API_KEY" \
   --header "content-type: application/json" \
   --data '{
-  "url": "https://95cfcc41ed90.ngrok-free.app/webhooks/muralpay"
+  "url": "https://mural-backend.vercel.app/webhooks/muralpay"
 }'
 
 echo ""
