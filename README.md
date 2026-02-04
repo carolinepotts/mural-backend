@@ -67,10 +67,34 @@ To test webhooks locally, update the url in `update-webhook.sh` to be an ngrok o
 
 ## Current status
 
-_(To be filled in: what is expected to work, and what is not yet working.)_
+Status against the project requirements (✓ = working, ✗ = not implemented because I ran out of time):
+
+### Customer: Product Checkout & Payment Collection
+
+- ✓ **Display a simple product catalog with items for sale** — GET `/products` returns the catalog.
+- ✓ **Allow customers to shop for items** — Create an order from a product, including the wallet id the payment will come from. (Limitation: one product per order.)
+- ✓ **Allow customers to complete checkout in USDC on Polygon** — Sending a payment to the Merchant's wallet (id hard-coded in webhooks) is detected; the matching order is marked paid. (Note: matching is by source wallet id + price only; see limitations below.)
+
+### Merchant: Payment Receipt & Verification
+
+- ✓ **Detect when a customer's payment has been received** — Webhook receives payment events and updates order status to paid.
+- ✓ **Display payment status and confirmation to the merchant for their orders** — Merchant can poll GET `/orders` to see order (and thus payment) status.
+
+### Merchant: Automatic Fund Conversion & Withdrawal
+
+- ✗ **When payment is received, automatically initiate a conversion and transfer of funds to a bank account denominated in Colombian Pesos (COP)** — Not implemented.
+- ✗ **A way for the Merchant to see the status of their withdrawals to COP** — Not implemented.
+
+### Limitations (for items marked ✓)
+
+- **Payment matching** — A payment is matched to an order by source wallet id and price only. This does not handle multiple orders from the same customer (same source wallet) with the same price; the wrong order could be marked paid.
+- **One product per order** — Each order is for a single product. Supporting multiple products per order would be needed for a production app.
+- **Unlimited quantities** — Products currently have unlimited quantity. Whether to add inventory/quantity limits depends on what the products represent in production _(e.g. limited physical product vs. unlimited digital file download)_.
 
 ---
 
 ## Future work
 
-_(To be filled in: improvements to make the backend more production ready.)_
+- Improve payment matching (e.g. order ids, timestamps, or other disambiguation) so multiple orders from the same wallet at the same price are handled correctly.
+- Support multiple products per order (line items / order contents).
+- Decide on and implement product quantity/inventory if needed for production.
