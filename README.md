@@ -91,6 +91,15 @@ Status against the project requirements (✓ = working, ✗ = not implemented be
 - **One product per order** — Each order is for a single product. Supporting multiple products per order would be needed for a production app.
 - **Unlimited quantities** — Products currently have unlimited quantity. Whether to add inventory/quantity limits depends on what the products represent in production _(e.g. limited physical product vs. unlimited digital file download)_.
 
+### Seeing it in Action
+
+End-to-end flow:
+
+1. **Customer lists products** — The customer GETs `/products` to see the catalog.
+2. **Customer creates an order** — The customer POSTs to `/orders` for one of those products, using the source wallet id as the "Customer Wallet" account in Mural (the wallet the customer will pay from).
+3. **Customer pays in Mural** — In Mural, the customer sends the order price to the destination (merchant) wallet. _(This could also happen outside of Mural, but I was using Mural accounts for testing both the sender and the receiver.)_ This assumes the user knows which wallet address to send the payment to; the destination wallet address should probably be included in the POST `/orders` response so the customer knows where to pay, but it is currently not.
+4. **Merchant sees order status change to paid** — The merchant polls GET `/orders` and sees the order status change to `paid` when the webhook has processed the payment.
+
 ---
 
 ## Future work
