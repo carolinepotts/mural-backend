@@ -1,6 +1,6 @@
 # Mural Backend
 
-NestJS backend for the Mural coding challenge. It uses Supabase for the database and can receive MuralPay webhooks.
+NestJS backend for the Mural coding challenge. It uses Supabase for the database and can receive MuralPay webhooks. It is deployed using Vercel.
 
 ## Setup instructions
 
@@ -95,6 +95,16 @@ Status against the project requirements (✓ = working, ✗ = not implemented be
 
 ## Future work
 
+To make this API production-ready, I would:
+
 - Improve payment matching (e.g. order ids, timestamps, or other disambiguation) so multiple orders from the same wallet at the same price are handled correctly.
 - Support multiple products per order (line items / order contents).
 - Decide on and implement product quantity/inventory if needed for production.
+- Add the ability to add, update, and remove products from the catalog via the API (currently, you can only do this in the database itself)
+- Add more fields to products, like a photo URL that links to S3 or Supabase storage
+- Add rate limiting
+- Improve error messages, input validation, and logging
+- Add authentication, including differentiating between endpoints that customers can access vs. merchant admin-only access
+- Pagination on get all requests (get all products, get all orders)
+- Create separate environments (e.g. separate dev vs. prod databases)
+- Consider whether Vercel is the right place to deploy the backend or not. This would be dependent on the team's existing infrastructure and the expected pattern & volume of requests.
