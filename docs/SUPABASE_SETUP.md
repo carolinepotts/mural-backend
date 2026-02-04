@@ -74,7 +74,7 @@ create table if not exists public.orders (
   price_usdc numeric(12, 6) not null,
   status public.order_status not null default 'PENDING',
   source_wallet_address text not null,
-  payment_detected_at timestamptz,
+  payment_transaction_date timestamptz,
   payment_tx_hash text,
   created_at timestamptz not null default now()
 );

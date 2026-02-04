@@ -83,4 +83,46 @@ export class OrdersService {
 
     return data as Order;
   }
+
+  async findOldestPendingOrderBySourceAndPrice(
+    sourceWalletAddress: string,
+    priceUsdc: number,
+  ): Promise<Order | null> {
+    const { data, error } = await this.supabase
+      .getClient()
+      .from('orders')
+      .select('*')
+      .eq('status', 'PENDING')
+      .eq('source_wallet_address', sourceWalletAddress)
+      .eq('price_usdc', priceUsdc)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to find pending order: ${error.message}`);
+    }
+
+    return (data ?? null) as Order | null;
+  }
+
+  async markOrderPaid(
+    orderId: string,
+    transactionHash: string,
+    detectedAt: string,
+  ): Promise<void> {
+    const { error } = await this.supabase
+      .getClient()
+      .from('orders')
+      .update({
+        status: 'PAID',
+        payment_tx_hash: transactionHash,
+        payment_transaction_date: detectedAt,
+      })
+      .eq('id', orderId);
+
+    if (error) {
+      throw new Error(`Failed to mark order as paid: ${error.message}`);
+    }
+  }
 }
