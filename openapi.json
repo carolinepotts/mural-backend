@@ -1,0 +1,328 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mural Coding Challenge Backend API",
+    "description": "API for the Mural Coding Challenge backend.",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "https://mural-backend.vercel.app",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Returns a simple hello message to test API availability.",
+        "operationId": "getRoot",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List all products",
+        "description": "Returns all products.",
+        "operationId": "getAllProducts",
+        "responses": {
+          "200": {
+            "description": "List of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "List all orders",
+        "description": "Returns all orders.",
+        "operationId": "getAllOrders",
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an order",
+        "description": "Creates a new order. Requires product_id, customer_email, and source_wallet_address.",
+        "operationId": "createOrder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrderDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing required fields",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BadRequestError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Get order by ID",
+        "description": "Returns a single order by its ID.",
+        "operationId": "getOrderById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Order ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NotFoundError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/muralpay": {
+      "post": {
+        "summary": "MuralPay webhook",
+        "description": "Receives MuralPay webhook events (e.g. account_credited). Acknowledges receipt with { \"received\": true }.",
+        "operationId": "muralpayWebhook",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MuralPayWebhookPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": { "type": "boolean", "example": true }
+                  },
+                  "required": ["received"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique order ID" },
+          "product_id": { "type": "string", "description": "Product ID" },
+          "customer_email": { "type": "string", "format": "email" },
+          "price_usdc": { "type": "string", "description": "Price in USDC" },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "PAID"],
+            "description": "Order status"
+          },
+          "source_wallet_address": {
+            "type": "string",
+            "description": "Customer wallet address for payment"
+          },
+          "payment_transaction_date": {
+            "type": "string",
+            "nullable": true,
+            "description": "Date of payment transaction when paid"
+          },
+          "payment_tx_hash": {
+            "type": "string",
+            "nullable": true,
+            "description": "Transaction hash when paid"
+          },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "product_id",
+          "customer_email",
+          "price_usdc",
+          "status",
+          "source_wallet_address",
+          "created_at"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "product_id": { "type": "string", "description": "Product ID" },
+          "customer_email": { "type": "string", "format": "email" },
+          "source_wallet_address": {
+            "type": "string",
+            "description": "Customer wallet address for payment"
+          }
+        },
+        "required": ["product_id", "customer_email", "source_wallet_address"]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique product ID" },
+          "name": { "type": "string" },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "price_usdc": { "type": "string", "description": "Price in USDC" },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "price_usdc", "created_at"]
+      },
+      "MuralPayWebhookPayload": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/AccountCreditedPayload" },
+              {
+                "type": "object",
+                "properties": { "type": { "type": "string" } }
+              }
+            ]
+          }
+        },
+        "required": ["payload"]
+      },
+      "AccountCreditedPayload": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["account_credited"] },
+          "accountId": { "type": "string" },
+          "organizationId": { "type": "string" },
+          "transactionId": { "type": "string" },
+          "accountWalletAddress": { "type": "string" },
+          "tokenAmount": {
+            "type": "object",
+            "properties": {
+              "blockchain": { "type": "string" },
+              "tokenAmount": { "type": "number" },
+              "tokenSymbol": { "type": "string" },
+              "tokenContractAddress": { "type": "string" }
+            },
+            "required": [
+              "blockchain",
+              "tokenAmount",
+              "tokenSymbol",
+              "tokenContractAddress"
+            ]
+          },
+          "transactionDetails": {
+            "type": "object",
+            "properties": {
+              "blockchain": { "type": "string" },
+              "transactionDate": { "type": "string" },
+              "transactionHash": { "type": "string" },
+              "sourceWalletAddress": { "type": "string" },
+              "destinationWalletAddress": { "type": "string" }
+            },
+            "required": [
+              "blockchain",
+              "transactionDate",
+              "transactionHash",
+              "sourceWalletAddress",
+              "destinationWalletAddress"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "accountId",
+          "organizationId",
+          "transactionId",
+          "accountWalletAddress",
+          "tokenAmount",
+          "transactionDetails"
+        ]
+      },
+      "BadRequestError": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "number", "example": 400 },
+          "message": {
+            "type": "string",
+            "example": "product_id, customer_email, and source_wallet_address are required"
+          },
+          "error": { "type": "string", "example": "Bad Request" }
+        }
+      },
+      "NotFoundError": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "number", "example": 404 },
+          "message": { "type": "string" },
+          "error": { "type": "string", "example": "Not Found" }
+        }
+      }
+    }
+  }
+}
