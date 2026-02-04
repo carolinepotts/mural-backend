@@ -91,6 +91,14 @@ Status against the project requirements (✓ = working, ✗ = not implemented be
 - **One product per order** — Each order is for a single product. Supporting multiple products per order would be needed for a production app.
 - **Unlimited quantities** — Products currently have unlimited quantity. Whether to add inventory/quantity limits depends on what the products represent in production _(e.g. limited physical product vs. unlimited digital file download)_.
 
+### High-level thoughts on how I would implement the things that I ran out of time on:
+
+- **When payment is received, automatically initiate a conversion and transfer of funds to a bank account denominated in Colombian Pesos (COP)**
+  - After marking an order as paid in the webhook controller, call another function that makes a request to the Mural API to initial the transfer of funds. Save the withdrawal request in a new Supabase table with a status of `created`.
+- **A way for the Merchant to see the status of their withdrawals to COP**
+  - Update the webhook controller to handle `payout_status_changed` events. The webhook is already configured to be subscribed to these events. Find the matching withdrawal in Supabase (if this is an event about a withdrawal). Update the status in Supabase to match the status in the event.
+  - Add an endpoint where the merchant can GET all withdrawals to see their current status.
+
 ### Seeing it in Action
 
 End-to-end flow:
