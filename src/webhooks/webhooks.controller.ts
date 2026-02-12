@@ -3,13 +3,16 @@ import {
   AccountCreditedPayload,
   MuralPayWebhookPayload,
 } from '../types/order.types';
+import { AccountsService } from '../accounts/accounts.service';
 import { OrdersService } from '../orders/orders.service';
+import { WithdrawalsService } from '../withdrawals/withdrawals.service';
 
 type MuralPayEventHandler = (
   payload: MuralPayWebhookPayload,
 ) => Promise<void> | void;
 
 const MERCHANT_WALLET_ADDRESS = '0xfb7814e50Af76Cea24e2174973000A45e134A2Bf';
+const WITHDRAWAL_THRESHOLD_USDC = 10;
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -21,7 +24,11 @@ export class WebhooksController {
         this.handleAccountCredited(payload.payload as AccountCreditedPayload),
     };
 
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly accountService: AccountsService,
+    private readonly withdrawalsService: WithdrawalsService,
+  ) {}
 
   @Post('muralpay')
   async muralpay(@Body() body: MuralPayWebhookPayload) {
@@ -45,7 +52,7 @@ export class WebhooksController {
   private async handleAccountCredited(
     payload: AccountCreditedPayload,
   ): Promise<void> {
-    const { tokenAmount, transactionDetails, accountWalletAddress } = payload;
+    const { tokenAmount, accountWalletAddress } = payload;
 
     if (accountWalletAddress !== MERCHANT_WALLET_ADDRESS) {
       this.logger.log(
@@ -64,6 +71,28 @@ export class WebhooksController {
       return;
     }
 
+    await this.markOrderAsPaidIfNeeded(payload);
+
+    await this.initiateWithdrawalIfNeeded(payload);
+  }
+
+  private async initiateWithdrawalIfNeeded(payload: AccountCreditedPayload) {
+    const balance = await this.accountService.getWalletBalance(
+      payload.accountId,
+    );
+
+    if (balance < WITHDRAWAL_THRESHOLD_USDC) {
+      this.logger.log(
+        `MuralPay: balance ${balance} USDC below threshold ${WITHDRAWAL_THRESHOLD_USDC}, skipping withdrawal`,
+      );
+      return;
+    }
+
+    await this.withdrawalsService.initiateWithdrawal(payload);
+  }
+
+  private async markOrderAsPaidIfNeeded(payload: AccountCreditedPayload) {
+    const { transactionDetails, tokenAmount } = payload;
     const order =
       await this.ordersService.findOldestPendingOrderBySourceAndPrice(
         transactionDetails.sourceWalletAddress,

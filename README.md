@@ -82,8 +82,8 @@ Status against the project requirements (✓ = working, ✗ = not implemented be
 
 ### Merchant: Automatic Fund Conversion & Withdrawal
 
-- ✗ **When payment is received, automatically initiate a conversion and transfer of funds to a bank account denominated in Colombian Pesos (COP)** — Not implemented.
-- ✗ **A way for the Merchant to see the status of their withdrawals to COP** — Not implemented.
+- **A way for the Merchant to see the status of their withdrawals to COP** — Not implemented.
+- When the balance reaches $X (constant, not configurable), automatically initiate a conversion and transfer of funds to a bank account denominated in Colombian Pesos (COP)
 
 ### Limitations (for items marked ✓)
 
@@ -94,7 +94,7 @@ Status against the project requirements (✓ = working, ✗ = not implemented be
 ### High-level thoughts on how I would implement the things that I ran out of time on:
 
 - **When payment is received, automatically initiate a conversion and transfer of funds to a bank account denominated in Colombian Pesos (COP)**
-  - After marking an order as paid in the webhook controller, call another function that makes a request to the Mural API to initial the transfer of funds. Save the withdrawal request in a new Supabase table with a status of `created`.
+  - When the balance reaches 10 USDC, call another function that makes a request to the Mural API to initiate the transfer of funds. Save the withdrawal request in a new Supabase table with a status of `created`.
 - **A way for the Merchant to see the status of their withdrawals to COP**
   - Update the webhook controller to handle `payout_status_changed` events. The webhook is already configured to be subscribed to these events. Find the matching withdrawal in Supabase (if this is an event about a withdrawal). Update the status in Supabase to match the status in the event.
   - Add an endpoint where the merchant can GET all withdrawals to see their current status.
